@@ -1,0 +1,140 @@
+---
+title: "03A - Binomial Logistic Regression"
+output: html_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this document we will conduct binomial logistic regression modeling on a data set relating to recruiting data and whether a person is hired or not hired based on test scores, interviews, and gender.  Data fields: 
+
+  - gender: gender
+  - sat: SAT test score of applicant
+  - gpa: GPA of applicant
+  - apttest: Score on an aptitude test given to applicant
+  - int1: applicant rating given by one of two line manager interviewers (1-5 where high is positive)
+  - int2: applicant rating given by second of two line manager interviewers (1-5 where high is positive)
+  - int3: applicant rating given by HR interviewer (1-5 where high is positive)
+  - hired: hired (1) or not hired (0)
+
+## Exercise 1 - Running a simple binomial logistic regression model
+
+```{r}
+# Download the recruiting dataset from the URL provided
+url <- "https://peopleanalytics-regression-book.org/data/recruiting.csv"
+recruiting <- read.csv(url)
+
+```
+
+```{r}
+# view the first few rows in the data set to acquaint yourself with the data
+recruiting
+```
+
+```{r}
+# What do you think the datatypes are?
+# gender: Categorical
+# sat: Quantitative
+# gpa: Quant
+# apttest: Quant
+# int1: Quant
+# int2: Quant
+# int3: Quant
+# hired: Boolean
+```
+
+
+
+```{r}
+# Perform any necessary datatype adjustments
+colSums(is.na(recruiting)) # no nas in the data
+
+```
+
+```{r}
+# get to the know the data a bit.  what is the split of hired/not hired,
+# do you notice differences between the interviewers, etc
+# Hint: summary(), GGally::ggpairs() are good first steps
+summary(recruiting
+        )
+GGally::ggpairs(recruiting)
+```
+
+```{r}
+# Run a simple binomial logistic regression model to estimate the influence of SAT scores
+# on hire success, saving your model using a name of your choice
+model <- glm(hired ~ sat,
+             data = recruiting,
+             family = "binomial")
+model
+
+```
+
+
+## Exercise 2 - Interpreting the coefficients
+
+```{r}
+# Examine the coefficients of your saved model
+(coef <- summary(model)$coefficients |> as.data.frame())
+coef
+```
+
+```{r}
+# Take a look at the odds ratio for our independent variable. How do you interpret this?
+coef$odds_ratio <- exp(coef[,"Estimate"])
+coef
+
+```
+
+```{r}
+# Do you think this is a good model?
+# looking at the p value, it looks like the SAT is a significant measure if someone is going to be hired or not
+```
+
+## Exercise 3 - Running a multiple binomial logistic regression model
+
+```{r}
+# What variables look like they might be interesting to include?
+# I would use gpa, apttest, and gender to start because I would want to see if HR are actually using those data points. I would also want to see gender alone is a significant predictor to make sure that we are not biased
+
+```
+
+```{r}
+# make a new model with gender and apttest
+
+model_2 <- glm(hired ~ gender + apttest,
+              data = recruiting, 
+              family = "binomial")
+model_2
+```
+
+```{r}
+# View the coefficients and log odds.
+(coef_2 <- summary(model_2)$coefficients |> as.data.frame())
+coef_2$odds_ratio <- exp(coef_2[,"Estimate"])
+coef_2
+```
+
+
+```{r}
+# Assess model fit - is this better than the simple model?
+DescTools::PseudoR2(model_2,
+                    which = c("McFadden", "CoxSnell", "Nagelkerke", "Tjur"))
+
+
+#predictions
+new_data <- data.frame(
+  apttest = c(60, 60, 70, 70),
+  gender = c("M", "F", "M", "F")
+)
+
+predict(model_2, new_data, type = "response")
+```
+
+Write a few sentences on the data and the results of your model.  Odds can be difficult to explain - can you try to 
+explain to a stakeholder what this means for a candidate with a 60 on their aptitude test vs a candidate with a 70?
+
+It looks like this model is an okay fit to the data. The pseudo R2 numbers are pretty low, but they are not lower than .1.
+
+I would also predict that a candidates with a .60 and .70 would be hired around 13% and 21.5% of the time respectivly with a slightly higher probability for males.

@@ -1,0 +1,91 @@
+---
+title: "2A - Statistical Inference"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this document we will briefly practice some foundational concepts of 
+statistical inference and hypothesis testing.  Follow the instructions 
+in the comments of each code chunk.
+
+## Exercise 1 - Running a $t$-test
+
+```{r}
+# Download the charity donation dataset from the URL provided
+url <- "https://peopleanalytics-regression-book.org/data/charity_donation.csv"
+
+data <- read.csv(url)
+
+set.seed(123)
+random_ages <- sample(data,100)
+
+
+```
+
+```{r}
+# Create two vectors capturing the total donations for those who have 
+# recently donated and those who have not
+recent <- data$total_donations[data$recent_donation == 1]
+mean_r <- mean(recent)
+
+not_recent <- data$total_donations[data$recent_donation == 0]
+mean_nr <- mean(not_recent)
+```
+
+```{r}
+# Calculate the difference in the means of these two vectors
+# Round this to 2 decimal places.
+
+mean_diff <- round(mean_r - mean_nr,2)
+
+```
+
+```{r}
+# Test the hypothesis that recent donors have a different mean donation amount. 
+# Ensure that your test is saved as an object with a name of your choice.
+
+test <- t.test(recent,not_recent)
+
+```
+
+```{r}
+# EXTENSION:  Test the hypothesis that recent donors donate MORE
+# (Hint: seek help on the t.test function to work out how to do this)
+help(t.test)
+
+
+more_test <- t.test(recent,not_recent,
+                    alternative = "greater")
+```
+
+## Exercise 2 - Interpreting a $t$-test
+
+```{r}
+# The results of a t-test are actually a named list.
+# You can access specific elements of the list using $ (eg my_test$p.value)
+# Return the standard error value for the difference in mean total donations. 
+# Round this to 2 decimal places
+round(test$stderr, 2)
+
+```
+
+```{r}
+# Return the p-value and the 95% confidence interval for the population diff.
+# round these to 2 decimal places 
+round(test$p.value,2)
+round(test$conf.int, 2)
+
+
+
+```
+
+Use these values to write an interpretation of your $t$-test, explaining what you have observed in the sample and what this means you can infer about the population.
+
+I am 95% confident that the true difference in total donations for people that donated recently and not recently is between $148.61 and $1414.14.
+
+It is also significant that those that donated recently also donate more than those that did not donate recetnly.
+
+

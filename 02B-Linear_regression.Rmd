@@ -1,0 +1,222 @@
+---
+title: "2B - Linear Regression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this document we will conduct linear regression modeling on a data set relating to graduate salaries in the United States, to try to understand economic factors which influence gradiate salaries,
+
+## Exercise 1 - Running a simple linear regression model
+
+```{r}
+# Download the graduates dataset from the URL provided
+url <- "https://peopleanalytics-regression-book.org/data/graduates.csv"
+
+data <- read.csv(url)
+
+```
+
+```{r}
+# view the first few rows in the data set to acquaint yourself with the data
+head(data)
+```
+
+```{r}
+# Determine how many observations we have in this data set
+library("dplyr")
+count(data)
+```
+
+```{r}
+# use the colnames() function to get the names of the columns in the data set
+colnames(data)
+```
+
+```{r}
+# Use the cor() function to determine the correlation between unemployment rate and median salary
+cor(data$Unemployment_rate,data$Median_salary)
+
+```
+
+```{r}
+# Consider the scale of the Unemployment_rate column.  
+# Transform it into a more useful scale
+# (Hint: we will want to understand the impact of a percentage point change)
+data$Unemployment_rate <- data$Unemployment_rate *100
+
+```
+
+
+```{r}
+# Run a simple linear regression model to estimate the influence of unemployment rate
+# on graduate salaries, saving your model using a name of your choice
+model <- lm(data = data, formula = Median_salary ~ Unemployment_rate)
+
+```
+
+
+
+## Exercise 2 - Interpreting the coefficients
+
+```{r}
+# Examine the coefficients of your saved model
+
+summary(model)
+
+model$coefficients
+
+```
+
+```{r}
+# Determine the 95% confidence interval for the coefficients
+
+confint(model, level = .95)
+
+```
+
+Write below an interpretation of these coefficients using the estimates and the confidence intervals which you just calculated.
+
+We are 95% confident that the as the unemployment rate increases by one degree the median salary decreases  between 3419 and 1211
+
+
+```{r}
+# EXTENSION:  If you are familiar with using ggplot2, create a plot of unemployment rate and
+# median salary and show the estimated linear model using geom_smooth()
+library(ggplot2)
+
+plot <- ggplot( data = data, aes(x = Unemployment_rate, y = Median_salary)) + 
+                  geom_point()+
+                  geom_smooth(method = "lm") +
+                  labs(x = "Unemployement Rate (%)",
+                       y = "Median Salarry ($)")
+  
+
+
+```
+
+## Exercise 3 - Running a multiple linear regression model
+
+```{r}
+# Run a multiple linear regression to determine the influence of both unemployment rate
+# and total graduate employees on median salary
+
+model_2 <- lm(data = data, formula = Median_salary ~ Unemployment_rate + Total)
+
+```
+
+```{r}
+# View the coefficients and confidence intervals
+coefficients(model)
+
+
+```
+
+Write below an interpretation of the coefficients of this model.
+
+
+## Exercise 4 - Including categorical input variables
+
+```{r}
+# Add discipline as an input variable to the previous model you created in 
+# Exercise 3.  
+model_3 <- lm(data = data, formula = Median_salary ~ Unemployment_rate + Total + Discipline)
+
+```
+
+
+```{r}
+# Inspect the results and determine which value was used as a reference for 
+# discipline in the model
+unique(data$Discipline)
+
+summary(model_3)
+```
+
+
+Write below your thoughts on whether any specific disciplines have a significant influence on median salary.
+
+The Disciplines of Computers & Math, Education, Engineering, and Physical Sciences all had P values below .05
+
+```{r}
+# EXTENSION:  Change your reference discipline to a discipline of your choice,
+# rerun the model and inspect the results.  How have they changed?
+
+```
+
+
+
+## Exercise 5 - Determining model fit
+
+```{r}
+# Determine the fit of your model from Exercise 4 
+summary(model_3)$r.squared
+
+```
+
+```{r}
+# Determine if any of the input variables can be removed to form a
+# more parsimonious model
+
+model_4 <- lm(data = data, formula = Median_salary ~ Unemployment_rate  + Discipline)
+
+summary(model_4)$r.squared
+
+
+```
+
+```{r}
+# Verify that these is no substantial difference in the fit of your
+# more parsimonious model
+
+summary(model_4)
+
+```
+
+```{r}
+# Run a summary of your parsimonious model and comment on
+# whether you are confident that it is better than a null model
+#
+#According to the very low p value on my F-statistic, my model is better than a null model
+
+```
+
+## EXTENSION Exercise 6 - Model diagnostics
+
+```{r}
+# Determine if the two numerical input variables have a significant correlation
+cor.test(data$Unemployment_rate, data$Total)
+
+```
+
+```{r}
+# Using the package mctest, use the imcdiag() function to test if collinearity 
+# exists in your full model from Exercise 3.  Use the VIF method for this.
+library(mctest)
+
+mctest::imcdiag(model_3, method = "VIF")
+
+```
+
+
+```{r}
+# View a density plot of the Median salaries in the data set - what do you observe?
+
+density(data$Median_salary) |> plot(main = "Median Salary Density")
+
+```
+
+
+
+```{r}
+# use the qqnorm() function to determine how the residuals of your model 
+# compare to a normal distribution
+# comment on your observations
+# consider re-running your model to address any concerns you have
+
+qqnorm(model_3$residuals)
+
+```
+
